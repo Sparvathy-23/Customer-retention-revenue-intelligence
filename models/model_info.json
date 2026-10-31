@@ -1,0 +1,21 @@
+{
+  "features": [
+    "recency_days",
+    "tenure_days",
+    "frequency",
+    "monetary",
+    "avg_order_value",
+    "purchases_last_90d",
+    "revenue_last_90d",
+    "purchases_last_180d",
+    "revenue_last_180d",
+    "avg_gap_days"
+  ],
+  "target": "buys again within 90 days after the cutoff",
+  "trained_on_cutoffs": [
+    "2010-09-01",
+    "2010-12-01",
+    "2011-03-01"
+  ],
+  "note": "probabilities were too low on the Sep 2011 test season; use for ranking"
+}
