@@ -2,7 +2,7 @@
 
 End-to-end analysis of customer retention and revenue on the **UCI Online Retail II** dataset (UK online retailer, Dec 2009 – Dec 2011): SQL analytics, RFM segmentation, a validated repeat-purchase model, a labelled historical backtest of a win-back campaign, and a Power BI dashboard.
 
-**Live demo:** [Streamlit link, to be added]
+**Live demo:** https://customer-retention-intelligence-mbz44pub855e4thaxdvs3v.streamlit.app/
 
 ## Key findings
 - Top 10% of customers generate about **63% of net revenue**.
