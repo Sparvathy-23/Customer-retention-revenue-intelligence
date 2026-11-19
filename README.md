@@ -20,8 +20,8 @@ UCI Online Retail II, both sheets: 1,067,371 raw rows. After cleaning: 1,033,068
 | Cleaning | `notebooks/02_cleaning.ipynb` | Apply cleaning rules, save the clean file |
 | SQL analytics | `sql/` | PostgreSQL: monthly revenue, cohort retention, RFM views and segments, revenue concentration |
 | Target and gaps | `notebooks/03_purchase_gaps_and_target.ipynb` | Define target: buys again within 90 days of a cutoff, using only prior data |
-| Features and models | `notebooks/04_features_and_models` | Time-based split, baselines, gradient boosting |
-| Test and calibration | `notebooks/05_calibration_test_backtest` | Single test on the 1 Sep 2011 cutoff |
+| Features and models | `notebooks/04_features_and_models.ipynb` | Time-based split, baselines, gradient boosting |
+| Test and calibration | `notebooks/05_calibration_test_backtest.ipynb` | Single test on the 1 Sep 2011 cutoff |
 | Retention backtest | `notebooks/06_retention_backtest.ipynb` | Compare targeting strategies at two cutoffs, with controls and sensitivity |
 | Dashboard exports | `notebooks/07_dashboard_exports.ipynb` | Nine CSVs in `dashboard/data` for Power BI |
 
@@ -58,5 +58,14 @@ app/         Streamlit app
 ## Tech stack
 PostgreSQL, Python (pandas, scikit-learn), Power BI, Streamlit, GitHub.
 
+
 ## Reproducing
-[Add: Python version, `pip install -r requirements.txt`, how to download the dataset, how to load into PostgreSQL, notebook run order.]
+1. Use Python 3.12 and a virtual environment.
+   - Notebooks: `pip install -r requirements-full.txt`
+   - Streamlit app only: `pip install -r requirements.txt`
+2. Download **Online Retail II** from the UCI Machine Learning Repository (both sheets), and save it as `data/raw/online+retail+ii/online_retail_II.xlsx`. The raw and processed data are not included in this repo (`data/` is git-ignored).
+3. Run `notebooks/01_load_and_inspect.ipynb` and `notebooks/02_cleaning.ipynb`. They produce `data/processed/online_retail_clean.csv` (1,033,068 rows).
+4. Start PostgreSQL (for example in Docker) and create a database named `retail`. Run `sql/01_schema.sql` to create the `transactions` table, then load `data/processed/online_retail_clean.csv` into it.
+5. Run the other SQL scripts in numeric order (`sql/02` to `sql/05`): revenue trends, cohorts, RFM views and segments.
+6. Run notebooks 03 to 07 in order. Notebooks 03, 04 and 07 connect to PostgreSQL and ask for the password when run, and nothing is stored. Notebook 07 writes the nine CSVs in `dashboard/data`.
+7. Run the app locally with `streamlit run app/app.py`. It only reads the CSVs in `dashboard/data`, so it needs no database.
