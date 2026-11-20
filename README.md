@@ -8,10 +8,10 @@ End-to-end analysis of customer retention and revenue on the **UCI Online Retail
 - Top 10% of customers generate about **63% of net revenue**.
 - **Champions** are 23.9% of customers but 69.7% of revenue. **Lapsed** customers are 27.8% of customers but 4.1% of revenue.
 - A gradient boosting repeat-purchase model ranks customers slightly better than a simple RFM rule on a held-out test cutoff (PR-AUC 0.767 vs 0.749).
-- In a win-back backtest, the model-based targeting earned 18.2K net (June 2011 cutoff) and 16.5K (September) against 4.3K and 3.5K for random contact. Most of that gain comes from ranking by order value; the model beat a simple RFM-based rule by only about 1%.
+- In a win-back backtest, model-based targeting earned **£18.2K** net (June 2011 cutoff) and **£16.5K** (September), against £4.3K and £3.5K for random contact. Most of that gain comes from ranking by order value: contacting the highest-order-value customers alone captures about 85% of the model's gain over random, and an RFM-rank × order-value control comes within about 1% of the model's net at both cutoffs.
 
 ## Data
-UCI Online Retail II, both sheets: 1,067,371 raw rows. After cleaning: 1,033,068 rows, 5,875 customers, 18,981,278 net revenue. 5,832 customers were RFM-scored (20 customers with net spend ≤ 0 excluded).
+UCI Online Retail II, both sheets: 1,067,371 raw rows. After cleaning: 1,033,068 rows, 5,875 customers, £18,981,278 net revenue. 5,832 customers were RFM-scored (20 customers with net spend ≤ 0 excluded).
 
 ## Approach
 | Step | Where | What |
@@ -30,7 +30,7 @@ UCI Online Retail II, both sheets: 1,067,371 raw rows. After cleaning: 1,033,068
 ## Results and caveats
 - **Model:** on the test cutoff, gradient boosting PR-AUC is 0.767 against 0.749 for a simple RFM rule. Probabilities came out too low on the test season, so calibration doesn't carry across seasons: the model is usable for **ranking** customers, not for absolute probabilities.
 - **Backtest:** the net figures rest on **assumed** parameters, not measured ones: 500 customers contacted, 5% response rate, £2 per contact, 10% discount on recovered orders, order value set to average order value. A sensitivity analysis varies response rate (2%, 5%, 10%) and cost per contact (£2, £10, £25).
-- **Controls:** about 85% of the model strategy's gain over random comes from order value alone, and a plain RFM-based score nearly matches the model. The honest conclusion is that a simple rule captures most of the benefit.
+- **Controls:** about 85% of the model strategy's gain over random comes from order value alone, and an RFM-rank × order-value score nearly matches the model (within about 1% net at both cutoffs). The honest conclusion is that a simple rule captures most of the benefit.
 - The December 2009 cohort is excluded from retention charts because it includes customers who started before the data begins.
 
 ## Dashboard
@@ -48,7 +48,7 @@ Files: [`customer_retention_dashboard.pbix`](dashboard/customer_retention_dashbo
 ## Repository structure
 ```text
 notebooks/   analysis notebooks 01–07
-sql/         PostgreSQL scripts (revenue trends, cohorts, RFM)
+sql/         PostgreSQL scripts (revenue trends, cohorts, RFM, segments)
 models/      saved model (gb_repeat_purchase.joblib)
 results/     test performance and calibration outputs
 dashboard/   Power BI file, PDF, screenshots, exported CSVs
@@ -65,7 +65,15 @@ PostgreSQL, Python (pandas, scikit-learn), Power BI, Streamlit, GitHub.
    - Streamlit app only: `pip install -r requirements.txt`
 2. Download **Online Retail II** from the UCI Machine Learning Repository (both sheets), and save it as `data/raw/online+retail+ii/online_retail_II.xlsx`. The raw and processed data are not included in this repo (`data/` is git-ignored).
 3. Run `notebooks/01_load_and_inspect.ipynb` and `notebooks/02_cleaning.ipynb`. They produce `data/processed/online_retail_clean.csv` (1,033,068 rows).
-4. Start PostgreSQL (for example in Docker) and create a database named `retail`. Run `sql/01_schema.sql` to create the `transactions` table, then load `data/processed/online_retail_clean.csv` into it.
-5. Run the other SQL scripts in numeric order (`sql/02` to `sql/05`): revenue trends, cohorts, RFM views and segments.
-6. Run notebooks 03 to 07 in order. Notebooks 03, 04 and 07 connect to PostgreSQL and ask for the password when run, and nothing is stored. Notebook 07 writes the nine CSVs in `dashboard/data`.
+4. Start PostgreSQL (for example in Docker), then create the database, schema and load the data. From the repo root, in PowerShell:
+   ```
+   docker run --name retail-db -e POSTGRES_USER=<user> -e POSTGRES_PASSWORD=<password> -p 5432:5432 -d postgres:16
+   docker exec -it retail-db psql -U <user> -d postgres -c "CREATE DATABASE retail;"
+   Get-Content sql\01_schema.sql | docker exec -i retail-db psql -U <user> -d retail
+   docker cp data/processed/online_retail_clean.csv retail-db:/tmp/
+   docker exec -it retail-db psql -U <user> -d retail -c "\copy transactions FROM '/tmp/online_retail_clean.csv' WITH (FORMAT csv, HEADER true)"
+   ```
+   On macOS or Linux, replace the `Get-Content` line with `docker exec -i retail-db psql -U <user> -d retail < sql/01_schema.sql`. If you already have a PostgreSQL container, skip the `docker run` line and use its name. Check the load with `SELECT COUNT(*) FROM transactions;`, which should return 1,033,068.
+5. Run the other SQL scripts in numeric order (`sql/02` to `sql/05`): revenue trends, cohorts, RFM views, segments and revenue concentration.
+6. Run notebooks 03 to 07 in order. Notebooks 03, 04 and 07 connect to the `retail` database on `localhost:5432` and ask for your PostgreSQL user and password when run (change the port in the connection cell if yours differs); nothing is stored. Notebook 07 writes the nine CSVs in `dashboard/data`.
 7. Run the app locally with `streamlit run app/app.py`. It only reads the CSVs in `dashboard/data`, so it needs no database.
